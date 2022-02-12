@@ -12,39 +12,6 @@ $menu_margin: $menu_radius; //margin around menuitems & sidebar items
 $window_radius: $button_radius + 4;
 $popover_radius: $button_radius + 5;
 
-* {
-  padding: 0;
-  -GtkToolButton-icon-spacing: 4;
-  -GtkTextView-error-underline-color: $error_color;
-
-  // The size for scrollbars. The slider is 2px smaller, but we keep it
-  // up so that the whole area is sensitive to button presses for the
-  // slider. The stepper button is larger in both directions, the slider
-  // only in the width
-
-  -GtkScrolledWindow-scrollbar-spacing: 0;
-
-  -GtkToolItemGroup-expander-size: 11;
-
-  -GtkWidget-text-handle-width: 20;
-  -GtkWidget-text-handle-height: 24;
-
-  -GtkDialog-button-spacing: 4;
-  -GtkDialog-action-area-border: 0;
-
-  // We use the outline properties to signal the focus properties
-  // to the adwaita engine: using real CSS properties is faster,
-  // and we don't use any outlines for now.
-
-  outline-color: gtkalpha(currentColor, 0.3);
-  outline-style: dashed;
-  outline-offset: -3px;
-  outline-width: 1px;
-  -gtk-outline-radius: 2px;
-
-  -gtk-secondary-caret-color: $selected_bg_color
-}
-
 selection { @extend %selected_items; }
 
 /***************
@@ -62,44 +29,20 @@ selection { @extend %selected_items; }
   }
 }
 
-/*
-   These wildcard seems unavoidable, need to investigate.
-   Wildcards are bad and troublesome, use them with care,
-   or better, just don't.
-   Everytime a wildcard is used a kitten dies, painfully.
-*/
+dnd {
+  color: $fg-color;
+}
 
-spinner:disabled,
-arrow:disabled,
-scrollbar:disabled,
-check:disabled,
-radio:disabled,
-treeview.expander:disabled { -gtk-icon-effect: dim; }
+.normal-icons {
+  -gtk-icon-size: 16px;
+}
 
-.gtkstyle-fallback {
-  color: $fg_color;
-  background-color: $bg_color;
-  text-shadow: none;
+.large-icons {
+  -gtk-icon-size: 32px;
+}
 
-  &:hover {
-    color: $fg_color;
-    background-color: lighten($bg_color, 10%);
-  }
-
-  &:active {
-    color: $fg_color;
-    background-color: darken($bg_color, 10%);
-  }
-
-  &:disabled {
-    color: $insensitive_fg_color;
-    background-color: $insensitive_bg_color;
-  }
-
-  &:selected {
-    color: $selected_fg_color;
-    background-color: $selected_bg_color;
-  }
+image:disabled {
+  -gtk-icon-filter: opacity(0.5);
 }
 
 .view,
@@ -336,7 +279,7 @@ entry {
     }
 
     &.flat {
-      &:focus, &:backdrop, &:disabled, &:backdrop:disabled, & {
+      &:focus-within, &:backdrop, &:disabled, &:backdrop:disabled, & {
         min-height: 0;
         padding: 2px;
         background-color: transparent;
@@ -345,7 +288,7 @@ entry {
       }
     }
 
-    &:focus { @include entry(focus); }
+    &:focus-within { @include entry(focus); }
 
     &:disabled { @include entry(insensitive); }
 
@@ -364,9 +307,9 @@ entry {
         background-color: transparentize($e_color, 0.9);
         color: $e_color;
         text-shadow: none;
-        border-color: entry_focus_border($e_color);
+        border-color: entry_focus-within_border($e_color);
 
-        &:focus { @include entry(focus, $e_color); }
+        &:focus-within { @include entry(focus, $e_color); }
 
         selection { background-color: $e_color; }
       }
@@ -383,7 +326,7 @@ entry {
     }
 
     &:drop(active) {
-      &:focus, & {
+      &:focus-within, & {
         border-color: $drop_target_color;
         box-shadow: inset 0 0 0 1px $drop_target_color;
       }
@@ -392,7 +335,7 @@ entry {
     .osd & {
       @include entry(osd);
 
-      &:focus { @include entry(osd-focus); }
+      &:focus-within { @include entry(osd-focus-within); }
 
       &:backdrop { @include entry(osd-backdrop); }
 
@@ -415,13 +358,13 @@ entry {
 
    // linked entries
   .linked:not(.vertical) > & { @extend %linked; }
-  .linked:not(.vertical) > &:focus + &,
-  .linked:not(.vertical) > &:focus + button,
-  .linked:not(.vertical) > &:focus + combobox > box > button.combo { border-left-color: entry_focus_border(); }
+  .linked:not(.vertical) > &:focus-within + &,
+  .linked:not(.vertical) > &:focus-within + button,
+  .linked:not(.vertical) > &:focus-within + combobox > box > button.combo { border-left-color: entry_focus-within_border(); }
 
-  .linked:not(.vertical) > &:focus.error + &,
-  .linked:not(.vertical) > &:focus.error + button,
-  .linked:not(.vertical) > &:focus.error + combobox > box > button.combo { border-left-color: entry_focus_border($error_color); }
+  .linked:not(.vertical) > &:focus-within.error + &,
+  .linked:not(.vertical) > &:focus-within.error + button,
+  .linked:not(.vertical) > &:focus-within.error + combobox > box > button.combo { border-left-color: entry_focus-within_border($error_color); }
 
   .linked:not(.vertical) > &:drop(active) + &,
   .linked:not(.vertical) > &:drop(active) + button,
@@ -448,31 +391,31 @@ entry {
     &:disabled + %entry:disabled,
     &:disabled + entry:disabled { border-top-color: mix($borders_color, $base_color, 30%); }
 
-    // color back the top border of a linked focused entry following another entry and add back the focus shadow.
+    // color back the top border of a linked focus-withined entry following another entry and add back the focus-within shadow.
     // :not(:only-child) is a specificity bump hack.
-    + %entry:focus:not(:only-child),
-    + entry:focus:not(:only-child) { border-top-color: entry_focus_border(); }
+    + %entry:focus-within:not(:only-child),
+    + entry:focus-within:not(:only-child) { border-top-color: entry_focus-within_border(); }
 
-    + %entry:focus.error:not(:only-child),
-    + entry:focus.error:not(:only-child) { border-top-color: entry_focus_border($error_color); }
+    + %entry:focus-within.error:not(:only-child),
+    + entry:focus-within.error:not(:only-child) { border-top-color: entry_focus-within_border($error_color); }
 
     + %entry:drop(active):not(:only-child),
     + entry:drop(active):not(:only-child) { border-top-color: $drop_target_color; }
 
-    // this takes care of coloring the top border of the focused entry subsequent widget.
+    // this takes care of coloring the top border of the focus-withined entry subsequent widget.
     // :not(:only-child) is a specificity bump hack.
-    &:focus:not(:only-child) {
+    &:focus-within:not(:only-child) {
       + %entry,
       + entry,
       + button,
-      + combobox > box > button.combo { border-top-color: entry_focus_border(); }
+      + combobox > box > button.combo { border-top-color: entry_focus-within_border(); }
     }
 
-    &:focus.error:not(:only-child) {
+    &:focus-within.error:not(:only-child) {
       + %entry,
       + entry,
       + button,
-      + combobox > box > button.combo { border-top-color: entry_focus_border($error_color); }
+      + combobox > box > button.combo { border-top-color: entry_focus-within_border($error_color); }
     }
 
     &:drop(active):not(:only-child) {
@@ -485,7 +428,7 @@ entry {
 }
 
 treeview entry {
-  &:focus {
+  &:focus-within {
     &:dir(rtl), &:dir(ltr) { // specificity bump hack
       background-color: $base_color;
       transition-property: color, background;
@@ -497,7 +440,7 @@ treeview entry {
     background-image: none;
     background-color: $base_color;
 
-    &:focus { border-color: $selected_bg_color; }
+    &:focus-within { border-color: $selected_bg_color; }
   }
 }
 
@@ -1976,7 +1919,7 @@ treeview.view {
   rubberband { @extend rubberband; } // to avoid borders being overridden by the previously set props
 
   &:selected {
-    &:focus, & {
+    &:focus-within, & {
       border-radius: 0;
     }
 
@@ -2058,7 +2001,7 @@ treeview.view {
                                                   transparentize(black, 0.9));
 
     &:selected {
-      &:focus, & {
+      &:focus-within, & {
         border-radius: 4px;
 
         @if $variant == 'light' {
@@ -2100,7 +2043,7 @@ treeview.view {
     border-radius: 4px;
 
     &:selected {
-      &:focus, & {
+      &:focus-within, & {
         background-color: if($variant == 'light',
                              transparentize($selected_fg_color, 0.7),
                              darken($selected_bg_color, 10%));
@@ -2220,7 +2163,7 @@ menubar,
     padding: 3px 8px;
     border: 1px solid transparent;
 
-    &:hover { //Seems like it :hover even with keyboard focus
+    &:hover { //Seems like it :hover even with keyboard focus-within
       background-image: linear-gradient(to bottom,
                                         shade($selected_bg_color, 1.2),
                                         shade($selected_bg_color, 1.0)
@@ -3025,7 +2968,7 @@ switch {
 }
 
 checkbutton.text-button, radiobutton.text-button {
-  // this is for a nice focus on check and radios text
+  // this is for a nice focus-within on check and radios text
   padding: 2px 0;
   outline-offset: 0;
 
@@ -3146,7 +3089,7 @@ menu menuitem {
 treeview.view check,
 treeview.view radio {
   &:selected {
-    &:focus, & {
+    &:focus-within, & {
       color: $fg_color;
 
       @if $variant == 'light' { border-color: $selected_borders_color; }
@@ -3162,7 +3105,7 @@ treeview.view radio {
   &:backdrop { &:selected, & { color: $backdrop_fg_color; }}
 }
 
-treeview.view radio:selected { &:focus, & { @extend %radio; }} // This is a workaround
+treeview.view radio:selected { &:focus-within, & { @extend %radio; }} // This is a workaround
 
 
 /************
@@ -4018,10 +3961,12 @@ filechooserbutton:drop(active) {
   -gtk-icon-style: regular;
 
   row,
-  treeview {
+  treeview,
+  listview {
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
-    &:selected, &:selected:focus {
+    background-color: $sidebar_bg_color;
+    &:selected, &:selected:focus-within {
       background-image: linear-gradient(to bottom,
                                         shade($sidebar_bg_color, 0.87),
                                         shade($sidebar_bg_color, 0.95) 10%,
@@ -4043,7 +3988,7 @@ filechooserbutton:drop(active) {
         border-bottom: 1px solid shade($bg_color, 0.9);
       }
     }
-    .view:selected, .view:selected:focus { color: $fg_color; }
+    .view:selected, .view:selected:focus-within { color: $fg_color; }
     &:backdrop { background-color: transparent; }
   }
   @at-root %sidebar_left,
@@ -4331,7 +4276,7 @@ infobar { border-style: none; }
     }
   }
 
-  label:selected { &:focus, &:hover, & { background-color: darken($selected_bg_color, 10%); }}
+  label:selected { &:focus-within, &:hover, & { background-color: darken($selected_bg_color, 10%); }}
 
   *:link { @extend %link_selected; }
 }
@@ -4632,9 +4577,10 @@ tooltip.csd {
 // catch all extend :)
 
 %selected_items {
+  outline-style: none;
 
-  // don't differentiate between focussed and unfocussed widgets.
-  &:focus, &{
+  // don't differentiate between focus-withinsed and unfocus-withinsed widgets.
+  &:focus-within, &{
     color: $selected_fg_color;
     background-color: $selected_bg_color;
   }
@@ -4729,7 +4675,7 @@ button.circular { // FIXME: aggregate to buttons
   }
 }
 
-:not(decoration):not(window):drop(active):focus,
+:not(decoration):not(window):drop(active):focus-within,
 :not(decoration):not(window):drop(active) { // FIXME needs to be done widget by widget, this wildcard should really die
   border-color: $drop_target_color;
   box-shadow: inset 0 0 0 1px $drop_target_color;
