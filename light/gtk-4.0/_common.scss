@@ -7,6 +7,10 @@ $asset_suffix: if($variant=='dark', '-dark', '');
 $backdrop_transition: 200ms ease-out;
 $button_transition: all 200ms $ease-out-quad;
 $button_radius: 3px;
+$menu_radius: 5px;
+$menu_margin: $menu_radius; //margin around menuitems & sidebar items
+$window_radius: $button_radius + 4;
+$popover_radius: $button_radius + 5;
 
 * {
   padding: 0;
@@ -247,7 +251,7 @@ assistant {
  * Spinner Animation *
  *********************/
 @keyframes spin {
-  to { -gtk-icon-transform: rotate(1turn); }
+  to { transform: rotate(1turn); }
 }
 
 spinner {
@@ -264,6 +268,46 @@ spinner {
   }
 }
 
+/**********************
+ * General Typography *
+ **********************/
+
+.large-title {
+   font-weight: 300;
+   font-size: 24pt;
+}
+.title-1 {
+   font-weight: 800;
+   font-size: 20pt;
+}
+.title-2 {
+   font-weight: 800;
+   font-size: 15pt;
+}
+.title-3 {
+   font-weight: 700;
+   font-size: 15pt;
+}
+.title-4 {
+   font-weight: 700;
+   font-size: 13pt;
+}
+.heading {
+   font-weight: 700;
+   font-size: 11pt;
+}
+.body {
+   font-weight: 400;
+   font-size: 11pt;
+}
+.caption-heading {
+   font-weight: 700;
+   font-size: 9pt;
+}
+.caption {
+   font-weight: 400;
+   font-size: 9pt;
+}
 
 /****************
  * Text Entries *
@@ -457,6 +501,13 @@ treeview entry {
   }
 }
 
+/*******************
+ * Editable Labels *
+ *******************/
+ editablelabel > stack > text {
+  @include entry(normal);
+}
+
 /***********
  * Buttons *
  ***********/
@@ -541,13 +592,35 @@ button {
       }
     }
 
-    &.flat { &:backdrop, &:disabled, &:backdrop:disabled { @include button(undecorated); }}
-
     &:disabled {
       @include button(insensitive);
+      -gtk-icon-filter: opacity(0.5);
 
       &:active,
       &:checked { @include button(insensitive-active); }
+    }
+
+    @at-root %button_basic_flat,
+    &.flat {
+      @include button(undecorated);
+      // to avoid adjacent buttons borders clashing when transitioning, the transition on the normal state is set
+      // to none, while it's added back in the hover state, so the button decoration will fade in on hover, but
+      // it won't fade out when the pointer leave the button allocation area. To make the transition more evident
+      // in this case the duration is increased.
+      transition: none;
+
+      &:hover {
+        @include button(undecorated-hover);
+        transition: $button_transition;
+        transition-duration: 500ms;
+      }
+      &.keyboard-activating,
+      &:active,
+      &:checked {
+        @include button(undecorated-active);
+        transition: $button_transition;
+      }
+      &:backdrop, &:disabled, &:backdrop:disabled { @include button(undecorated); }
     }
 
     &.image-button {
@@ -586,7 +659,8 @@ button {
         color: $selected_fg_color;
         border-color: transparent;
 
-        &:backdrop { color: if($variant=='light', $backdrop_base_color, $backdrop_fg_color); }
+        &:backdrop { color: if($variant=='light', $backdrop_base_color, $backdrop_fg_color);
+        }
       }
     }
   }
@@ -1035,9 +1109,11 @@ button.color {
 /*********
  * Links *
  *********/
+
 %link,
-*:link {
+link {
   color: $link_color;
+  text-decoration: underline;
 
   &:visited {
     color: $link_visited_color;
@@ -1066,7 +1142,7 @@ button.color {
   *:selected & { color: mix($selected_fg_color, $selected_bg_color, 80%); }
 }
 
-button:link,
+button.link,
 button:visited {
   @extend %undecorated_button;
 
@@ -1085,7 +1161,7 @@ button:visited {
   > label {
     @extend %link;
 
-    text-decoration-line: underline;
+    text-decoration: underline;
   }
 }
 
@@ -1282,11 +1358,29 @@ spinbutton {
 /**************
  * ComboBoxes *
  **************/
+dropdown > popover.menu.background > contents { padding: 0; } //allow search entries with no margin
+
+dropdown > button > box {
+  border-spacing: 6px;
+
+  > stack > row.activatable:hover {
+    background: none;
+    box-shadow: none;
+  }
+}
+
+dropdown,
 combobox {
   arrow {
     -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
     min-height: 16px;
     min-width: 16px;
+  }
+
+  // align menu labels with the button label
+  > popover.menu > contents modelbutton {
+    padding-left: 9px;
+    padding-right: 9px;
   }
 
   &.linked {
@@ -1406,6 +1500,45 @@ searchbar,
   }
 }
 
+/*****************
+ * Title buttons *
+ *****************/
+
+windowcontrols {
+  border-spacing: 2px;
+
+  &:not(.empty) {
+    &.start:dir(ltr),
+    &.end:dir(rtl) {
+      margin-right: 7px;
+    }
+
+    &.start:dir(rtl),
+    &.end:dir(ltr) {
+      margin-left: 7px;
+    }
+  }
+
+  button {
+    @extend %button_basic;
+
+    @extend %button_basic_flat;
+
+
+    border-radius: 9999px;
+    padding: 3px;
+    margin: 0 2px;
+    min-width: 0;
+    min-height: 0;
+    &:hover {
+      //special case hover colors inside a headerbar
+      @include button(undecorated-hover,$c:darken($headerbar_color,6%));
+    }
+    &:active,
+    &:checked { @include button(undecorated-active,$c:darken($headerbar_color,10%)); }
+  }
+}
+
 
 /***************
  * Header bars *
@@ -1442,6 +1575,18 @@ headerbar {
     padding-right: 12px;
 
     @extend .dim-label;
+  }
+
+  /* Darken switchbuttons for headerbars. issue #1588 */
+  stackswitcher > button:checked,
+  button.toggle:checked {
+
+    background: if($variant == 'light', image(darken($bg_color, 17%)), image(darken($bg_color, 9%)));
+    border-color: darken($borders_color, 3%);
+    border-top-color: darken($borders_color, 8%);
+    &:backdrop {
+      @include button(backdrop-active);
+    }
   }
 
   &.selection-mode {
@@ -1583,19 +1728,21 @@ headerbar {
     min-height: 24px;
     padding: 4px;
 
-    button.titlebutton,
-    menubutton.titlebutton {
-      min-height: 22px;
-      min-width: 22px;
-      margin: 0;
-      padding: 0;
-    }
+    windowcontrols {
+      button,
+      menubutton {
+        min-height: 22px;
+        min-width: 22px;
+        margin: 0;
+        padding: 0;
+      }
 
-    menubutton.titlebutton button {
-      min-height: 20px;
-      min-width: 20px;
-      margin: 0;
-      padding: 4px;
+      menubutton button {
+        min-height: 20px;
+        min-width: 20px;
+        margin: 0;
+        padding: 4px;
+      }
     }
   }
 
@@ -1613,6 +1760,14 @@ headerbar {
 }
 
 headerbar {
+  > windowhandle > box {
+    &,
+    > box.start,
+    > box.end {
+      border-spacing: 3px;
+    }
+  }
+
   // add vertical margins to common widget on the headerbar to avoid them spanning the whole height
   entry,
   separator {
@@ -1735,7 +1890,7 @@ headerbar { // headerbar border rounding
 // Development versions of apps to use a differently styled headerbar
 
 window.devel {
-  headerbar.titlebar:not(.selection-mode) {
+  headerbar.titlebar {
     $c: darken($bg_color, 10%);
     $gradient: cross-fade(10% -gtk-icontheme("system-run-symbolic"), image(transparent)) 90% 0/256px 256px no-repeat,
                linear-gradient(to right, transparent 65%, transparentize($selected_bg_color, 0.8)),
@@ -1770,7 +1925,8 @@ window.devel {
 /************
  * Pathbars *
  ************/
-.path-bar button {
+
+.pathbar > button {
   &.text-button, &.image-button, & {
     padding-left: 4px;
     padding-right: 4px;
@@ -1800,6 +1956,10 @@ window.devel {
 /**************
  * Tree Views *
  **************/
+
+$_treeview_borders_color: if($variant=='light',mix($borders_color, $base_color,80%),mix($fg_color, $base_color, 20%));
+$_treeview_backdrop_borders_color: if($variant=='light',mix($backdrop_borders_color, $base_color, 80%),mix($backdrop_fg_color, $base_color, 20%));
+columnview.view,
 treeview.view {
   @at-root * {
     -GtkTreeView-horizontal-separator: 4;
@@ -1955,8 +2115,8 @@ treeview.view {
     }
   }
 
-  header {
-    button {
+  > header {
+    > button {
       $_column_header_color: mix($fg_color, $base_color, 50%);
 
       @extend %column_header_button;
@@ -1980,6 +2140,17 @@ treeview.view {
 
         color: $fg_color;
         transition: none; //I shouldn't need this
+      }
+      sort-indicator {
+        &.ascending {
+          -gtk-icon-source: -gtk-icontheme('pan-up-symbolic');
+        }
+        &.descending {
+          -gtk-icon-source: -gtk-icontheme('pan-down-symbolic');
+        }
+
+        min-height: 16px;
+        min-width: 16px;
       }
     }
 
@@ -2336,7 +2507,7 @@ notebook {
     > tabs > arrow {
       @extend %button_basic;
 
-      @extend %button_basic.flat;
+      @extend %button_basic_flat;
 
       min-height: 16px;
       min-width: 16px;
@@ -2353,7 +2524,7 @@ notebook {
       &:disabled { @include button(undecorated); }
     }
 
-    tab {
+    > tabs > tab {
       min-height: 20px;
       min-width: 24px;
       padding: 3px 12px;
@@ -3778,7 +3949,7 @@ calendar {
 /***********
  * Dialogs *
  ***********/
-messagedialog { // Message Dialog styling
+window.dialog.message { // Message Dialog styling
   .titlebar {
     min-height: 20px;
     background-image: none;
@@ -3940,6 +4111,7 @@ stacksidebar {
 /****************
  * File chooser *
  ****************/
+
 $_placesidebar_icons_opacity: 0.7;
 
 placessidebar {
@@ -3978,7 +4150,7 @@ placessidebar {
     }
 
     @at-root button.sidebar-button {
-      @extend %button_basic.flat;
+      @extend %button_basic_flat;
 
       @extend %button_selected.flat;
 
@@ -4380,8 +4552,7 @@ colorchooser .popover.osd { border-radius: 5px; }
 /**********************
  * Window Decorations *
  *********************/
-decoration {
-  border-radius: 7px 7px 0 0;
+window {
   // lamefun trick to get rounded borders regardless of CSD use
   border-width: 0px;
 
@@ -4390,112 +4561,73 @@ decoration {
   $_wm_border: if($variant=='light', transparentize(black, 0.77), transparentize($borders_color, 0.1));
   $_wm_border_backdrop: if($variant=='light', transparentize(black, 0.82), transparentize($borders_color, 0.1));
 
-  box-shadow: 0 3px 9px 1px transparentize(black, 0.5),
-              0 0 0 1px $_wm_border; //doing borders with box-shadow
+  &.csd {
+    box-shadow: 0 3px 9px 1px transparentize(black, 0.5),
+                0 0 0 1px $_wm_border; //doing borders with box-shadow
+    margin: 0px;
+    border-radius: $window_radius $window_radius 0 0;
+    &:backdrop {
+      // the transparent shadow here is to enforce that the shadow extents don't
+      // change when we go to backdrop, to prevent jumping windows.
+      // The biggest shadow should be in the same order then in the active state
+      // or the jumping will happen during the transition.
+      box-shadow: 0 3px 9px 1px transparent,
+                  0 2px 6px 2px transparentize(black, 0.8),
+                  0 0 0 1px $_wm_border_backdrop;
+      transition: $backdrop_transition;
+    }
 
-  // FIXME rationalize shadows
+    &.popup {
+      border-radius: $menu_radius;
+      box-shadow: 0 1px 2px transparentize(black, 0.8),
+                  0 0 0 1px transparentize($_wm_border, 0.1);
+    }
 
-  // this is used for the resize cursor area
-  margin: 10px;
-
-  &:backdrop {
-    // the transparent shadow here is to enforce that the shadow extents don't
-    // change when we go to backdrop, to prevent jumping windows.
-    // The biggest shadow should be in the same order then in the active state
-    // or the jumping will happen during the transition.
-    box-shadow: 0 3px 9px 1px transparent,
-                0 2px 6px 2px transparentize(black, 0.8),
-                0 0 0 1px $_wm_border_backdrop;
-    transition: $backdrop_transition;
+    &.dialog.message {
+      border-radius: $window_radius;
+      box-shadow: 0 1px 2px transparentize(black, 0.8),
+                  0 0 0 1px transparentize($_wm_border, 0.1);
+    }
   }
 
-  .maximized &,
-  .fullscreen &,
-  .tiled &,
-  .tiled-top &,
-  .tiled-right &,
-  .tiled-bottom &,
-  .tiled-left & { border-radius: 0; }
-
-  .popup & { box-shadow: none; }
-
-  // server-side decorations as used by mutter
-  .ssd & { box-shadow: 0 0 0 1px $_wm_border; } //just doing borders, wm draws actual shadows
-
-  .csd.popup & {
-    border-radius: 0;
-    box-shadow: 0 1px 2px transparentize(black, 0.8),
-                0 0 0 1px transparentize($_wm_border,0.1);
-  }
-
-  tooltip.csd & {
-    border-radius: 5px;
-    box-shadow: none;
-  }
-
-  messagedialog.csd & {
-    border-radius: 7px;
-    box-shadow: 0 1px 2px transparentize(black, 0.8),
-                  0 0 0 1px transparentize($_wm_border,0.1);
-  }
-
-  .solid-csd & {
+  &.solid-csd {
     margin: 0;
     padding: 4px;
-    background-color: $borders_color;
     border: solid 1px $borders_color;
     border-radius: 0;
     box-shadow: inset 0 0 0 3px $headerbar_color, inset 0 1px $top_hilight;
 
     &:backdrop { box-shadow: inset 0 0 0 3px $backdrop_bg_color, inset 0 1px $top_hilight; }
   }
-}
 
-// Window buttons
-button.titlebutton {
-  @extend %button_basic;
+  &.maximized,
+  &.fullscreen { border-radius: 0; box-shadow: none; }
 
-  @extend %button_basic.flat;
+  &.tiled,
+  &.tiled-top,
+  &.tiled-left,
+  &.tiled-right,
+  &.tiled-bottom {
+    border-radius: 0;
+    box-shadow: 0 0 0 1px $_wm_border,
+                0 0 0 20px transparent; //transparent control workaround -- #3670
 
-  @include _button_text_shadow;
-  border-radius: 9999px;
-  button:hover { background: white; background-image: none; }
-
-  &:not(.appmenu) {
-    color: transparent;
-    background-color: transparent;
-    background-position: center;
-    background-repeat: no-repeat;
-
-    // fade the png buttons out on unfocused windows
-    &:backdrop { opacity: 0.5; }
-  }
-  // Load png assets for each button
-  @each $k in ('close','maximize', 'minimize') {
-    @each $l, $m in ('',''), (':backdrop','-backdrop'), (':hover','-hover'), (':active','-active') {
-      &.#{$k}#{$l} { background-image: -gtk-scaled(url('assets/titlebutton-#{$k}#{$m}#{$asset_suffix}.png'),
-                                                   url('assets/titlebutton-#{$k}#{$m}#{$asset_suffix}@2.png')); }
+    &:backdrop { box-shadow: 0 0 0 1px $_wm_border_backdrop,
+                             0 0 0 20px transparent; // #3670
     }
   }
 
-  .selection-mode & {
-    @extend %button.flat.suggested-action;
+  &.popup { box-shadow: none; }
 
-    @extend %nobg_selected_items;
-  }
+  // server-side decorations as used by mutter
+  &.ssd { box-shadow: 0 0 0 1px $_wm_border; } //just doing borders, wm draws actual shadows
 
-  &:backdrop { -gtk-icon-shadow: none; }
 }
 
-.selection-mode headerbar button.titlebutton,
-.selection-mode .titlebar button.titlebutton,
-headerbar.selection-mode button.titlebutton,
-.titlebar.selection-mode button.titlebutton {
-  @include _button_text_shadow(white, $selected_bg_color);
-
-  &:backdrop { -gtk-icon-shadow: none; }
+tooltip.csd {
+  border-radius: 5px;
+  box-shadow: none;
 }
-
 
 // catch all extend :)
 
@@ -4604,13 +4736,18 @@ button.circular { // FIXME: aggregate to buttons
   caret-color: $drop_target_color;
 }
 
-stackswitcher button.text-button { min-width: 100px; } // FIXME aggregate with buttons
+stackswitcher > button.text-button { min-width: 100px; } // FIXME aggregate with buttons
 
-stackswitcher button.circular,
-stackswitcher button.text-button.circular { // FIXME aggregate with buttons
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
+stackswitcher.circular {
+  border-spacing: 12px;
+
+  // FIXME aggregate with buttons
+  > button.circular,
+  > button.text-button.circular {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+  }
 }
 
 /*************
