@@ -1362,11 +1362,18 @@ toolbar {
   &:not(.inline-toolbar):not(.osd) {
     switch,
     scale,
-    entry,
     spinbutton,
     button {
+      margin-left: 1px;
       margin-right: 1px;
-      margin-bottom: 1px;
+      margin-bottom: 2px;
+    }
+    .linked button {
+      margin: 0 0 2px 0;
+      min-height: 26px;
+    }
+    entry {
+      margin-bottom: 2px;
     }
   }
 }
@@ -3872,6 +3879,7 @@ filechooserbutton:drop(active) {
       }
     }
     .view:selected, .view:selected:focus { color: $fg_color; }
+    &:selected { color: $fg_color; }
     &:backdrop { background-color: transparent; }
   }
   @at-root %sidebar_left,
@@ -3900,9 +3908,9 @@ filechooserbutton:drop(active) {
   }
 
   list, treeview {
-    background-color: transparent;
+    background-color: $sidebar_bg_color;
     &:backdrop {
-      background-color: transparent;
+      background-color: $backdrop_sidebar_bg_color;
     }
   }
 
